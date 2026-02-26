@@ -68,6 +68,7 @@ export default function JamRoom() {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [isAudioMode, setIsAudioMode] = useState(false);
     const [showStickyPlayer, setShowStickyPlayer] = useState(false);
+    const [downloadVideoId, setDownloadVideoId] = useState(null);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -576,7 +577,10 @@ export default function JamRoom() {
                     // Always seek if difference is significant, just to be sure
                     const time = value;
                     player?.getCurrentTime().then(curr => {
-                        if (Math.abs(curr - time) > 0.5) {
+                        // Increase threshold to 2.0s to avoid buffering lag on Play
+                        // This allows the video to start immediately even if slightly off, 
+                        // letting the micro-sync loop catch up later.
+                        if (Math.abs(curr - time) > 2.0) {
                             player.seekTo(time);
                         }
                         player.playVideo();
@@ -1239,6 +1243,13 @@ export default function JamRoom() {
                                         <PlusIcon size={14} />
                                     </button>
                                     <button 
+                                        onClick={() => setDownloadVideoId(song.id)}
+                                        className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"
+                                        title="Download"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    </button>
+                                    <button 
                                         onClick={(e) => { e.stopPropagation(); handleLike(song); }}
                                         className="p-1.5 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-500 transition ml-1"
                                         title="Remove from Liked"
@@ -1300,6 +1311,13 @@ export default function JamRoom() {
                                     </div>
 
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition justify-end">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setDownloadVideoId(video.id); }}
+                                            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"
+                                            title="Download Video"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleLike(video); }}
                                             className={`p-1.5 rounded-lg transition ${likedSongs.some(s => s.id === video.id) ? 'text-pink-600' : 'text-gray-400 hover:text-pink-600'}`}
@@ -1513,6 +1531,13 @@ export default function JamRoom() {
                                 <Music size={24} />
                             </button>
                             <button 
+                                onClick={() => setDownloadVideoId(currentVideoId)}
+                                className="p-3 rounded-full transition-all duration-300 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                                title="Download Video"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            </button>
+                            <button 
                                 onClick={() => handleLike({ id: currentVideoId, title: currentTitle })}
                                 className={`p-3 rounded-full transition-all duration-300 ${likedSongs.some(s => s.id === currentVideoId) ? 'bg-pink-500/20 text-pink-500 scale-110' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
                             >
@@ -1682,6 +1707,18 @@ export default function JamRoom() {
                                                     <p className="text-[10px] text-gray-500 truncate">Suggested</p>
                                                 </div>
                                                 
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        setDownloadVideoId(vid.id);
+                                                    }}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
+                                                    title="Download"
+                                                    onPointerDown={(e) => e.stopPropagation()}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                </button>
+
                                                 <button 
                                                     onClick={(e) => { 
                                                         e.stopPropagation(); 
@@ -1862,6 +1899,19 @@ export default function JamRoom() {
                                                         <button 
                                                             onClick={(e) => { 
                                                                 e.stopPropagation(); 
+                                                                setDownloadVideoId(item.id);
+                                                            }}
+                                                            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-600 hover:text-white transition mr-1 z-10"
+                                                            title="Download"
+                                                            onMouseDown={(e) => e.stopPropagation()}
+                                                            onTouchStart={(e) => e.stopPropagation()}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                        </button>
+
+                                                        <button 
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
                                                                 handleLike({ ...item, thumb: item.thumb || `https://img.youtube.com/vi/${item.id}/hqdefault.jpg` }); 
                                                             }}
                                                             className={`p-1.5 rounded-lg transition mr-1 z-10 ${likedSongs.some(s => s.id === item.id) ? 'text-pink-500' : 'text-gray-600 hover:text-pink-500'}`}
@@ -1906,6 +1956,17 @@ export default function JamRoom() {
                                                     >
                                                         <img src={item.thumb || `https://img.youtube.com/vi/${item.id}/default.jpg`} className="w-10 h-10 rounded-lg object-cover grayscale group-hover:grayscale-0 transition" />
                                                         <p className="text-xs font-medium truncate flex-1 text-gray-400 group-hover:text-white transition">{item.title}</p>
+                                                        <button 
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setDownloadVideoId(item.id);
+                                                            }}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
+                                                            title="Download"
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                        </button>
                                                         <button 
                                                             onClick={(e) => { 
                                                                 e.stopPropagation(); 
@@ -1971,6 +2032,13 @@ export default function JamRoom() {
                                     </div>
 
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setDownloadVideoId(vid.id); }}
+                                            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"
+                                            title="Download Video"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleLike(vid); }}
                                             className={`p-1.5 rounded-lg transition ${likedSongs.some(s => s.id === vid.id) ? 'text-pink-600' : 'text-gray-400 hover:text-pink-600'}`}
@@ -2147,6 +2215,19 @@ export default function JamRoom() {
                                                 <button 
                                                     onClick={(e) => { 
                                                         e.stopPropagation(); 
+                                                        setDownloadVideoId(item.id);
+                                                    }}
+                                                    className="p-1.5 rounded-lg hover:bg-white/10 text-gray-600 hover:text-white transition mr-1 z-10"
+                                                    title="Download"
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                </button>
+
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
                                                         handleLike({ ...item, thumb: item.thumb || `https://img.youtube.com/vi/${item.id}/hqdefault.jpg` }); 
                                                     }}
                                                     className={`p-1.5 rounded-lg transition mr-1 z-10 ${likedSongs.some(s => s.id === item.id) ? 'text-pink-500' : 'text-gray-600 hover:text-pink-500'}`}
@@ -2185,6 +2266,17 @@ export default function JamRoom() {
                                             >
                                                 <img src={item.thumb || `https://img.youtube.com/vi/${item.id}/default.jpg`} className="w-10 h-10 rounded-lg object-cover grayscale group-hover:grayscale-0 transition" />
                                                 <p className="text-xs font-medium truncate flex-1 text-gray-400 group-hover:text-white transition">{item.title}</p>
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        setDownloadVideoId(item.id);
+                                                    }}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
+                                                    title="Download"
+                                                    onPointerDown={(e) => e.stopPropagation()}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                </button>
                                                 <button 
                                                     onClick={(e) => { 
                                                         e.stopPropagation(); 
@@ -2245,6 +2337,13 @@ export default function JamRoom() {
                         {/* Controls */}
                         <div className="flex items-center gap-3 relative z-10">
                             <button 
+                                onClick={(e) => { e.stopPropagation(); setDownloadVideoId(currentVideoId); }}
+                                className="p-2 rounded-full transition text-gray-400 hover:text-white hover:bg-white/10"
+                                title="Download Video"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            </button>
+                            <button 
                                 onClick={(e) => { e.stopPropagation(); handleLike({ id: currentVideoId, title: currentTitle }); }}
                                 className={`p-2 rounded-full transition ${likedSongs.some(s => s.id === currentVideoId) ? 'text-pink-500 bg-pink-500/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
                             >
@@ -2283,6 +2382,68 @@ export default function JamRoom() {
                                 title="Expand Player"
                             >
                                 <Maximize size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Download Modal */}
+            {downloadVideoId && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                Download Video
+                            </h2>
+                            <button onClick={() => setDownloadVideoId(null)} className="text-gray-400 hover:text-white transition">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Quality</label>
+                                <select id="download-quality" className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500 transition">
+                                    <option value="best">Best Video</option>
+                                    <option value="1080p">1080p</option>
+                                    <option value="720p">720p</option>
+                                    <option value="480p">480p</option>
+                                    <option value="audio">Audio Only (M4A)</option>
+                                </select>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Start Time (Optional)</label>
+                                    <input type="text" id="download-start" placeholder="e.g. 00:01:30" className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500 transition" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">End Time (Optional)</label>
+                                    <input type="text" id="download-end" placeholder="e.g. 00:02:45" className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500 transition" />
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-500">Format: HH:MM:SS. Leave blank to download full video.</p>
+                            
+                            <button 
+                                onClick={() => {
+                                    const quality = document.getElementById('download-quality').value;
+                                    const start = document.getElementById('download-start').value;
+                                    const end = document.getElementById('download-end').value;
+                                    
+                                    let url = `/api/download?videoId=${downloadVideoId}&quality=${quality}`;
+                                    if (start || end) {
+                                        if (start) url += `&startTime=${start}`;
+                                        if (end) url += `&endTime=${end}`;
+                                    }
+                                    
+                                    window.open(url, '_blank');
+                                    setDownloadVideoId(null);
+                                }}
+                                className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-purple-500/25 flex justify-center items-center gap-2"
+                            >
+                                Start Download
                             </button>
                         </div>
                     </div>

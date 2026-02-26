@@ -7,6 +7,10 @@ const axios = require('axios');
 // const YouTube = require('youtube-sr').default; // Disabled due to instability
 const ytSearch = require('yt-search');
 const db = require('./db');
+const youtubedl = require('youtube-dl-exec');
+const ffmpegPath = require('ffmpeg-static');
+const os = require('os');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -112,6 +116,65 @@ app.get('/search', async (req, res) => {
     } catch (err) {
         console.error('Search handler error:', err.message);
         res.status(500).json({ error: "Search failed", details: err.message });
+    }
+});
+
+// Download Endpoint
+app.get('/api/download', async (req, res) => {
+    try {
+        const { videoId, quality, startTime, endTime } = req.query;
+        if (!videoId) return res.status(400).json({ error: "Missing videoId" });
+
+        const url = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        let format = 'bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio/best';
+        if (quality === 'audio') {
+            format = 'bestaudio[ext=m4a]/bestaudio/best';
+        } else if (quality === '1080p') {
+            format = 'bestvideo[height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]';
+        } else if (quality === '720p') {
+            format = 'bestvideo[height<=720]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]';
+        } else if (quality === '480p') {
+            format = 'bestvideo[height<=480]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]';
+        }
+
+        const tmpFile = path.join(os.tmpdir(), `download_${videoId}_${Date.now()}.${quality === 'audio' ? 'm4a' : 'mp4'}`);
+
+        const args = {
+            format: format,
+            ffmpegLocation: ffmpegPath,
+            output: tmpFile,
+        };
+
+        if (startTime || endTime) {
+            const start = startTime || '00:00:00';
+            const end = endTime || 'inf';
+            // yt-dlp requires the format *start-end for download-sections
+            args.downloadSections = `*${start}-${end}`;
+            // Removed forceKeyframesAtCuts to prevent extremely slow re-encoding
+        }
+
+        if (quality !== 'audio') {
+            args.mergeOutputFormat = 'mp4';
+        }
+
+        await youtubedl(url, args);
+
+        const filename = quality === 'audio' ? `audio_${videoId}.m4a` : `video_${videoId}.mp4`;
+        res.download(tmpFile, filename, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+            }
+            fs.unlink(tmpFile, (unlinkErr) => {
+                if (unlinkErr) console.error('Error deleting temp file:', unlinkErr);
+            });
+        });
+
+    } catch (err) {
+        console.error('Download error:', err.message);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Download failed", details: err.message });
+        }
     }
 });
 
